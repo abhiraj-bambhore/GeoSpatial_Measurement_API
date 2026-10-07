@@ -28,6 +28,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const exportJsonBtn = document.getElementById('export-json-btn');
   const exportCsvBtn = document.getElementById('export-csv-btn');
 
+  // Map Elements
+  const mapOverviewSection = document.getElementById('map-overview-section');
+  const overviewMapContainer = document.getElementById('overview-map');
+  const fitBoundsBtn = document.getElementById('fit-bounds-btn');
+  const modalMapContainer = document.getElementById('modal-map');
+  const modalCoordsBadge = document.getElementById('modal-coords-badge');
+
   // Modal Elements
   const featureModal = document.getElementById('feature-modal');
   const modalTitle = document.getElementById('modal-title');
@@ -47,6 +54,10 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentMeasurements = [];
   let currentFilter = 'all';
   let currentFile = null;
+  let overviewMap = null;
+  let overviewLayers = null;
+  let modalMap = null;
+  let modalLayers = null;
 
   // Drag and drop event listeners
   ['dragenter', 'dragover'].forEach(eventName => {
@@ -100,6 +111,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // Export handlers
   exportJsonBtn.addEventListener('click', exportAsJson);
   exportCsvBtn.addEventListener('click', exportAsCsv);
+
+  if (fitBoundsBtn) {
+    fitBoundsBtn.addEventListener('click', () => {
+      if (overviewMap && overviewLayers && overviewLayers.getLayers().length > 0) {
+        overviewMap.fitBounds(overviewLayers.getBounds(), { padding: [30, 30] });
+      }
+    });
+  }
 
   // Modal event listeners
   modalCloseBtn.addEventListener('click', closeModal);
@@ -194,6 +213,7 @@ document.addEventListener('DOMContentLoaded', () => {
       currentMeasurements = data.measurements || [];
       measurementsSection.classList.remove('hidden');
       renderMeasurementsTable();
+      renderOverviewMap(currentMeasurements);
       measurementsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (err) {
       console.error('Error fetching measurements:', err);
@@ -259,14 +279,14 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
     }).join('');
 
-    // Attach row and button click events to open detail modal
-    measurementsTbody.querySelectorAll('tr').forEach(tr => {
-      tr.addEventListener('click', (e) => {
-        const idx = parseInt(tr.getAttribute('data-index'), 10);
-        const feature = currentMeasurements.find(m => m.feature_index === idx);
-        if (feature) openFeatureModal(feature);
-      });
-    });
+    // Use event delegation on measurements tbody for table rows and Inspect buttons
+    measurementsTbody.onclick = (e) => {
+      const row = e.target.closest('tr[data-index]');
+      if (!row) return;
+      const idx = parseInt(row.getAttribute('data-index'), 10);
+      const feature = currentMeasurements.find(m => m.feature_index === idx);
+      if (feature) openFeatureModal(feature);
+    };
   }
 
   function openFeatureModal(feature) {
@@ -304,37 +324,181 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
     }
 
-    // Render SVG visual representation
-    renderGeometrySvg(feature.geometry_wkt, feature.geometry_type);
-
+    // Immediately show the modal popup
     featureModal.classList.remove('hidden');
+
+    // Safely render map or SVG visuals
+    try {
+      renderModalMap(feature);
+    } catch (mapErr) {
+      console.warn('Modal map render warning:', mapErr);
+    }
+
+    try {
+      renderGeometrySvg(feature.geometry_wkt, feature.geometry_type);
+    } catch (svgErr) {
+      console.warn('SVG render warning:', svgErr);
+    }
+
+    setTimeout(() => {
+      if (modalMap) {
+        modalMap.invalidateSize();
+      }
+    }, 150);
   }
 
   function closeModal() {
     featureModal.classList.add('hidden');
   }
 
+  function parseWktCoordinates(wkt) {
+    if (!wkt) return [];
+    const matches = wkt.match(/[-+]?\d*\.?\d+\s+[-+]?\d*\.?\d+/g);
+    if (!matches) return [];
+    return matches.map(pair => {
+      const [x, y] = pair.trim().split(/\s+/).map(Number);
+      return { x, y };
+    });
+  }
+
+  function createLeafletLayer(wkt, geomType, isInteractive = true, onClick = null) {
+    const points = parseWktCoordinates(wkt);
+    if (!points || points.length === 0) return null;
+
+    // Leaflet expects [lat, lng] which corresponds to [y, x] in standard EPSG:4326
+    const latLngs = points.map(p => [p.y, p.x]);
+    let layer = null;
+
+    const style = {
+      color: '#0071e3',
+      fillColor: '#0071e3',
+      fillOpacity: 0.25,
+      weight: 3,
+    };
+
+    if (geomType === 'Point' || latLngs.length === 1) {
+      layer = L.circleMarker(latLngs[0], {
+        radius: 8,
+        color: '#0071e3',
+        fillColor: '#0071e3',
+        fillOpacity: 0.9,
+        weight: 2,
+      });
+    } else if (geomType === 'LineString' || geomType === 'MultiLineString') {
+      layer = L.polyline(latLngs, {
+        color: '#0071e3',
+        weight: 4,
+        opacity: 0.85,
+      });
+    } else {
+      layer = L.polygon(latLngs, style);
+    }
+
+    if (layer && isInteractive && onClick) {
+      layer.on('click', onClick);
+    }
+
+    return layer;
+  }
+
+  function renderOverviewMap(measurements) {
+    if (!overviewMapContainer || typeof L === 'undefined') return;
+
+    if (mapOverviewSection) {
+      mapOverviewSection.classList.remove('hidden');
+    }
+
+    if (!overviewMap) {
+      overviewMap = L.map('overview-map').setView([20, 0], 2);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://carto.com/">CARTO</a>, OpenStreetMap',
+        maxZoom: 19,
+      }).addTo(overviewMap);
+      overviewLayers = L.featureGroup().addTo(overviewMap);
+    }
+
+    overviewLayers.clearLayers();
+
+    measurements.forEach(m => {
+      const layer = createLeafletLayer(m.geometry_wkt, m.geometry_type, true, () => {
+        openFeatureModal(m);
+      });
+      if (layer) {
+        layer.bindTooltip(`Feature #${m.feature_index}: ${m.geometry_type}`, { sticky: true });
+        overviewLayers.addLayer(layer);
+      }
+    });
+
+    if (overviewLayers.getLayers().length > 0) {
+      overviewMap.fitBounds(overviewLayers.getBounds(), { padding: [30, 30], maxZoom: 16 });
+    }
+
+    setTimeout(() => {
+      if (overviewMap) overviewMap.invalidateSize();
+    }, 250);
+  }
+
+  function renderModalMap(feature) {
+    if (!modalMapContainer || typeof L === 'undefined') return;
+
+    if (!modalMap) {
+      modalMap = L.map('modal-map').setView([20, 0], 2);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; CARTO, OpenStreetMap',
+        maxZoom: 19,
+      }).addTo(modalMap);
+      modalLayers = L.featureGroup().addTo(modalMap);
+    }
+
+    modalLayers.clearLayers();
+
+    const points = parseWktCoordinates(feature.geometry_wkt);
+    if (points && points.length > 0) {
+      if (modalCoordsBadge) {
+        modalCoordsBadge.textContent = `${points[0].x.toFixed(4)}, ${points[0].y.toFixed(4)}`;
+      }
+      const layer = createLeafletLayer(feature.geometry_wkt, feature.geometry_type, false);
+      if (layer) {
+        modalLayers.addLayer(layer);
+        if (points.length === 1 || feature.geometry_type === 'Point') {
+          modalMap.setView([points[0].y, points[0].x], 15);
+        } else {
+          try {
+            const bounds = modalLayers.getBounds();
+            if (bounds && bounds.isValid()) {
+              modalMap.fitBounds(bounds, { padding: [40, 40], maxZoom: 17 });
+            } else {
+              modalMap.setView([points[0].y, points[0].x], 14);
+            }
+          } catch (e) {
+            modalMap.setView([points[0].y, points[0].x], 14);
+          }
+        }
+      }
+      if (geomCanvasCaption) {
+        geomCanvasCaption.textContent = `${feature.geometry_type} with ${points.length} coordinates plotted on live map`;
+      }
+    } else {
+      if (modalCoordsBadge) modalCoordsBadge.textContent = 'N/A';
+      if (geomCanvasCaption) geomCanvasCaption.textContent = 'No coordinate points available for this geometry.';
+    }
+  }
+
   function renderGeometrySvg(wkt, geomType) {
+    if (!geomSvg) return;
     geomSvg.innerHTML = '';
     if (!wkt) {
-      geomCanvasCaption.textContent = 'No geometry coordinates to render.';
+      if (geomCanvasCaption) geomCanvasCaption.textContent = 'No geometry coordinates to render.';
       return;
     }
 
     try {
-      // Extract numeric coordinate pairs from WKT
-      const matches = wkt.match(/[-+]?\d*\.?\d+\s+[-+]?\d*\.?\d+/g);
-      if (!matches || matches.length === 0) {
-        geomCanvasCaption.textContent = 'Coordinate parsing unavailable for this geometry.';
+      const points = parseWktCoordinates(wkt);
+      if (!points || points.length === 0) {
+        if (geomCanvasCaption) geomCanvasCaption.textContent = 'Coordinate parsing unavailable for this geometry.';
         return;
       }
 
-      const points = matches.map(pair => {
-        const [x, y] = pair.trim().split(/\s+/).map(Number);
-        return { x, y };
-      });
-
-      // Calculate bounding box
       let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
       points.forEach(pt => {
         if (pt.x < minX) minX = pt.x;
@@ -346,7 +510,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const widthSpan = maxX - minX || 0.0001;
       const heightSpan = maxY - minY || 0.0001;
 
-      // Map to 400x240 SVG with padding
       const pad = 36;
       const w = 400 - (pad * 2);
       const h = 240 - (pad * 2);
@@ -354,7 +517,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const toSvgCoords = (pt) => {
         const normX = (pt.x - minX) / widthSpan;
         const normY = (pt.y - minY) / heightSpan;
-        // Flip Y because screen coordinates point down
         const svgX = pad + (normX * w);
         const svgY = 240 - pad - (normY * h);
         return { x: svgX, y: svgY };
@@ -369,7 +531,6 @@ document.addEventListener('DOMContentLoaded', () => {
           <circle cx="${pt.x}" cy="${pt.y}" r="8" fill="#0071e3"/>
           <circle cx="${pt.x}" cy="${pt.y}" r="3" fill="#ffffff"/>
         `;
-        geomCanvasCaption.textContent = `Point coordinate: (${points[0].x.toFixed(5)}, ${points[0].y.toFixed(5)})`;
       } else if (geomType === 'LineString' || geomType === 'MultiLineString') {
         const polylinePts = svgPts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
         const vertexDots = svgPts.map(p => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.5" fill="#0071e3" stroke="#fff" stroke-width="1.5"/>`).join('');
@@ -378,9 +539,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <polyline points="${polylinePts}" fill="none" stroke="#0071e3" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
           ${vertexDots}
         `;
-        geomCanvasCaption.textContent = `LineString trajectory: ${points.length} vertices plotted`;
       } else {
-        // Polygon / MultiPolygon
         const polygonPts = svgPts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
         const vertexDots = svgPts.map(p => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3" fill="#0071e3" stroke="#fff" stroke-width="1"/>`).join('');
 
@@ -388,11 +547,9 @@ document.addEventListener('DOMContentLoaded', () => {
           <polygon points="${polygonPts}" fill="rgba(0, 113, 227, 0.12)" stroke="#0071e3" stroke-width="2" stroke-linejoin="round"/>
           ${vertexDots}
         `;
-        geomCanvasCaption.textContent = `Polygon boundary: ${points.length} boundary coordinates`;
       }
     } catch (err) {
       console.warn('SVG geometry plot error:', err);
-      geomCanvasCaption.textContent = 'Geometry representation generated from WKT.';
     }
   }
 

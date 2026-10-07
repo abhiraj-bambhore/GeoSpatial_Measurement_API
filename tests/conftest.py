@@ -7,7 +7,6 @@ from pathlib import Path
 
 import fiona
 import pytest
-from fiona.crs import from_epsg
 from shapely.geometry import LineString, Point, Polygon, mapping
 
 
@@ -77,7 +76,7 @@ def sample_shapefile_zip(tmp_path) -> Path:
         "properties": {"name": "str:50", "zone": "str:20"},
     }
 
-    crs = from_epsg(4326)
+    crs = "EPSG:4326"
 
     # Polygon roughly in Bengaluru, India
     poly = Polygon(

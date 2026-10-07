@@ -2,6 +2,10 @@
 
 A production-grade backend service and analytics interface built with **FastAPI**, **LangGraph**, and **Supabase / PostGIS**, designed to ingest geospatial files (ESRI Shapefiles in `.zip` archives and Keyhole Markup Language `.kml`), validate geometries, auto-reproject geographic coordinates to optimal metric projected coordinate reference systems (UTM), and calculate high-precision spatial measurements.
 
+<p align="center">
+  <img src="docs/images/02_analysis_dashboard.png" alt="Geospatial File Measurement Engine Overview" width="100%" />
+</p>
+
 ---
 
 ## Table of Contents
@@ -75,6 +79,16 @@ A production-grade backend service and analytics interface built with **FastAPI*
                             ▼
          [ Database: Supabase / SQLite ]
 ```
+
+### Database Schema & Entity Relationships (Supabase)
+The database architecture leverages Supabase (PostgreSQL) with relational constraints, cascading deletes, and JSONB attribute storage:
+
+<p align="center">
+  <img src="docs/images/06_supabase_schema_visualizer.png" alt="Supabase PostgreSQL Schema Visualizer" width="100%" />
+</p>
+
+- **`files` table**: Stores dataset metadata including file UUID, filename, path, feature count, detected CRS, ingestion status (`PENDING`, `COMPLETED`, `FAILED`), and timestamps.
+- **`measurements` table**: Captures individual feature records linked via `file_id` foreign key (`ON DELETE CASCADE`), storing feature index, geometry type, WKT geometry representation, JSONB attribute properties, measurement type, value, and unit.
 
 ### Application Structure
 ```
@@ -270,8 +284,8 @@ Using `uv`:
 uv sync
 ```
 
-### 4. Supabase Database Migration (Optional)
-Execute `migrations/001_initial.sql` in the Supabase SQL Editor to initialize tables, foreign keys, and RLS policies.
+### 4. Supabase Database Migration
+Execute [`migrations/001_initial.sql`](migrations/001_initial.sql) in your Supabase SQL Editor to initialize the `files` and `measurements` relational tables, foreign key constraints, indices, and Row Level Security (RLS) policies.
 
 ### 5. Start the Server
 ```bash
@@ -340,6 +354,38 @@ The interface incorporates:
 - **Interactive Drag & Drop**: Visual boundary feedback with progress indicators.
 - **Dynamic Feature Inspector**: Real-time geometry filtering (Polygon, LineString, Point) with metric unit formatters.
 - **Zero Decorative Emojis**: Strictly follows professional, clean design standards.
+
+### 1. Geospatial Ingestion & Upload Zone
+Upload Shapefile archives (`.zip`) or Keyhole Markup Language (`.kml`) documents up to 50MB with instant format validation and progress reporting.
+
+<p align="center">
+  <img src="docs/images/01_upload_interface.png" alt="Geospatial File Upload Interface" width="100%" />
+</p>
+
+### 2. Dataset Overview & Extracted Measurements Table
+Displays source CRS, feature counts, automatically resolved UTM projection zone, direct API endpoints, category filters (Polygon, LineString, Point), and search capabilities with instant CSV and JSON export.
+
+<p align="center">
+  <img src="docs/images/02_analysis_dashboard.png" alt="File Overview & Extracted Feature Measurements" width="100%" />
+</p>
+
+### 3. Feature Detail Inspector Modal
+Clicking **Inspect** on any feature row opens a modal displaying the coordinate geometry vector, calculated geodesic measurements ($m^2$ or $m$), copyable WKT, and all associated GIS metadata attributes.
+
+<p align="center">
+  <img src="docs/images/03_feature_inspector_modal.png" alt="Feature Geometry Visualization" width="90%" />
+</p>
+
+<p align="center">
+  <img src="docs/images/04_feature_attributes_wkt.png" alt="Geometry WKT & Attribute Properties" width="90%" />
+</p>
+
+### 4. Processed Files Archive
+Real-time tracking of all processed datasets synchronized with Supabase and local SQLite storage, including file status badges, timestamps, and one-click loading.
+
+<p align="center">
+  <img src="docs/images/05_processed_files_archive.png" alt="Processed Files Archive" width="100%" />
+</p>
 
 ---
 
