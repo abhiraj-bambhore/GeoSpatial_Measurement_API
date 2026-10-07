@@ -1,0 +1,38 @@
+[project]
+name = "geospatial-measurement-api"
+version = "0.1.0"
+description = "Production Geospatial File Measurement API using FastAPI, LangGraph, and Supabase"
+readme = "README.md"
+authors = [
+    { name = "Abhiraj-ux", email = "abhirajbambhore@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.142.2",
+    "fiona>=1.10.1",
+    "langchain-core>=1.6.7",
+    "langgraph>=1.2.14",
+    "pydantic>=2.13.5",
+    "pydantic-settings>=2.15.0",
+    "pyproj>=3.8.0",
+    "python-dotenv>=1.2.4",
+    "python-multipart>=0.0.32",
+    "shapely>=2.1.2",
+    "supabase>=2.32.0",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[tool.uv]
+package = false
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+

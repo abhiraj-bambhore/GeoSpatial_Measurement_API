@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Sample Polygon KML</name>
+    <Placemark>
+      <name>Central Park Reservoir</name>
+      <description>Sample enclosed water body</description>
+      <Polygon>
+        <extrude>1</extrude>
+        <altitudeMode>clampToGround</altitudeMode>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              -73.9654,40.7850,0
+              -73.9610,40.7865,0
+              -73.9575,40.7830,0
+              -73.9615,40.7810,0
+              -73.9654,40.7850,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+  </Document>
+</kml>

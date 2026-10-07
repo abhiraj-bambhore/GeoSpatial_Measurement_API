@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Geospatial Measurement Engine</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="navbar">
+    <div class="nav-container">
+      <div class="nav-brand">
+        <span class="nav-title">Geospatial Measurement</span>
+        <span class="nav-badge">API v1.0</span>
+      </div>
+      <nav class="nav-links">
+        <a href="/docs" target="_blank" class="nav-link">API Documentation</a>
+        <a href="#history-section" class="nav-link">Recent Files</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="main-container">
+    <section class="hero-section">
+      <h1 class="hero-title">Precision Geospatial Analysis</h1>
+      <p class="hero-subtitle">
+        Upload Shapefile archives (.zip) or KML documents. The system validates geometries, reprojects geographic coordinates to local metric UTM projections, and computes geodesic measurements.
+      </p>
+    </section>
+
+    <!-- Upload Card -->
+    <section class="card upload-card">
+      <div id="drop-zone" class="drop-zone">
+        <input type="file" id="file-input" accept=".zip,.kml" class="file-input" />
+        <div class="drop-zone-content">
+          <div class="icon-circle">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+          </div>
+          <div class="drop-text-primary">Choose a geospatial file or drag and drop</div>
+          <div class="drop-text-secondary">Accepted formats: Shapefile (.zip) or Keyhole Markup Language (.kml) up to 50MB</div>
+          <button id="browse-btn" class="button button-primary">Select File</button>
+        </div>
+      </div>
+      <div id="upload-status" class="status-container hidden">
+        <div class="spinner"></div>
+        <div id="status-text" class="status-text">Processing geospatial features...</div>
+      </div>
+    </section>
+
+    <!-- File Information Card -->
+    <section id="file-info-section" class="card hidden">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">File Overview</h2>
+          <div id="info-id" class="code-id"></div>
+        </div>
+        <div id="info-status-pill" class="badge">PENDING</div>
+      </div>
+
+      <div class="metrics-grid">
+        <div class="metric-item">
+          <span class="metric-label">Filename</span>
+          <span id="info-filename" class="metric-value">-</span>
+        </div>
+        <div class="metric-item">
+          <span class="metric-label">Source CRS</span>
+          <span id="info-crs" class="metric-value">-</span>
+        </div>
+        <div class="metric-item">
+          <span class="metric-label">Feature Count</span>
+          <span id="info-count" class="metric-value">-</span>
+        </div>
+        <div class="metric-item">
+          <span class="metric-label">Projected System</span>
+          <span id="info-projected" class="metric-value">Auto UTM Zone</span>
+        </div>
+      </div>
+
+      <div class="api-links-bar">
+        <span class="api-label">Direct API Endpoints:</span>
+        <a id="link-file-json" href="#" target="_blank" class="api-link">GET /api/files/{id}/</a>
+        <a id="link-measurements-json" href="#" target="_blank" class="api-link">GET /api/files/{id}/measurements/</a>
+      </div>
+    </section>
+
+    <!-- Interactive Map Overview Card -->
+    <section id="map-overview-section" class="card hidden">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">Geographic Map View</h2>
+          <p class="section-desc">Interactive OpenStreetMap representation of all extracted features in this dataset.</p>
+        </div>
+        <div class="map-controls">
+          <button id="fit-bounds-btn" class="button button-secondary btn-mini">Fit All Features</button>
+        </div>
+      </div>
+      <div id="overview-map" class="interactive-map-container"></div>
+      <div class="map-caption">Click any geometry layer on the map to inspect its details and measurements.</div>
+    </section>
+
+    <!-- Measurements Table Card -->
+    <section id="measurements-section" class="card hidden">
+      <div class="table-toolbar">
+        <div>
+          <h2 class="card-title">Extracted Features & Measurements</h2>
+          <p class="section-desc">Click any feature record to inspect geometry and attributes. Export available in JSON and CSV.</p>
+        </div>
+        <div class="filter-controls">
+          <div class="export-actions">
+            <button id="export-json-btn" class="button button-secondary">Export JSON</button>
+            <button id="export-csv-btn" class="button button-secondary">Export CSV</button>
+          </div>
+          <div class="filter-pills" id="filter-pills">
+            <button class="pill active" data-filter="all">All</button>
+            <button class="pill" data-filter="Polygon">Polygon</button>
+            <button class="pill" data-filter="LineString">LineString</button>
+            <button class="pill" data-filter="Point">Point</button>
+            <button class="pill" data-filter="Other">Other</button>
+          </div>
+          <input type="text" id="search-input" placeholder="Search properties or ID..." class="input-search" />
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="data-table clickable-rows">
+          <thead>
+            <tr>
+              <th>Index</th>
+              <th>Geometry Type</th>
+              <th>Measurement Type</th>
+              <th>Calculated Value</th>
+              <th>Unit</th>
+              <th>Properties</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="measurements-tbody">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Apple-style Feature Detail Modal -->
+    <div id="feature-modal" class="modal-backdrop hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div>
+            <h3 id="modal-title" class="modal-title">Feature Detail</h3>
+            <div id="modal-subtitle" class="modal-subtitle"></div>
+          </div>
+          <button id="modal-close-btn" class="modal-close" aria-label="Close">&times;</button>
+        </div>
+
+        <div class="modal-body">
+          <!-- Real Interactive Geographic Map -->
+          <div class="modal-section">
+            <div class="section-header-row">
+              <span class="section-heading">Geographic Map Location</span>
+              <span id="modal-coords-badge" class="code-id"></span>
+            </div>
+            <div id="modal-map" class="modal-map-view"></div>
+            <div class="canvas-caption" id="geom-canvas-caption">Live map layer with OpenStreetMap / CartoDB tiles</div>
+          </div>
+
+          <!-- Measurement Metrics -->
+          <div class="metrics-grid modal-metrics">
+            <div class="metric-item">
+              <span class="metric-label">Geometry Type</span>
+              <span id="modal-geom-type" class="metric-value">-</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Measurement</span>
+              <span id="modal-meas-type" class="metric-value">-</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Value</span>
+              <span id="modal-meas-val" class="metric-value">-</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Unit</span>
+              <span id="modal-meas-unit" class="metric-value">-</span>
+            </div>
+          </div>
+
+          <!-- WKT Geometry -->
+          <div class="modal-section">
+            <div class="section-header-row">
+              <span class="section-heading">Geometry WKT</span>
+              <button id="copy-wkt-btn" class="button button-secondary btn-mini">Copy WKT</button>
+            </div>
+            <pre id="modal-wkt" class="code-box"></pre>
+          </div>
+
+          <!-- Properties -->
+          <div class="modal-section">
+            <span class="section-heading">Feature Attributes & Properties</span>
+            <div id="modal-properties-container" class="properties-table-wrapper"></div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button id="modal-done-btn" class="button button-primary">Done</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Files History -->
+    <section id="history-section" class="card">
+      <div class="card-header">
+        <h2 class="card-title">Processed Files Archive</h2>
+        <button id="refresh-history-btn" class="button button-secondary">Refresh</button>
+      </div>
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>File ID</th>
+              <th>Filename</th>
+              <th>CRS</th>
+              <th>Features</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="history-tbody">
+            <tr><td colspan="7" class="empty-state">No processed files yet. Upload a file above.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-container">
+      <div>Geospatial File Measurement Service — Production FastAPI Engine</div>
+      <div>Designed with Precision</div>
+    </div>
+  </footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>
