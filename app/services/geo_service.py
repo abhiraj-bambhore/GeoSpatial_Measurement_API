@@ -8,11 +8,11 @@ import logging
 import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import fiona
 from shapely import wkt as shapely_wkt
-from shapely.geometry import LineString, MultiLineString, MultiPolygon, Point, Polygon, shape
+from shapely.geometry import LineString, Point, Polygon, shape
 
 from app.services.crs_service import format_crs, is_geographic_crs, transform_geometry
 
@@ -52,6 +52,47 @@ def _parse_coordinates(coord_text: str) -> list[tuple[float, float]]:
     return coords
 
 
+def _extract_geometries_from_node(node: ET.Element, geometries: list[Any]) -> None:
+    """Extract Shapely geometry objects from a KML XML element node."""
+    node_tag = _strip_ns(node.tag)
+    if node_tag == "Point":
+        coord_elem = next((c for c in node if _strip_ns(c.tag) == "coordinates"), None)
+        if coord_elem is not None and coord_elem.text:
+            coords = _parse_coordinates(coord_elem.text)
+            if coords:
+                geometries.append(Point(coords[0]))
+    elif node_tag == "LineString":
+        coord_elem = next((c for c in node if _strip_ns(c.tag) == "coordinates"), None)
+        if coord_elem is not None and coord_elem.text:
+            coords = _parse_coordinates(coord_elem.text)
+            if len(coords) >= 2:
+                geometries.append(LineString(coords))
+    elif node_tag == "Polygon":
+        shell_coords: list[tuple[float, float]] = []
+        holes: list[list[tuple[float, float]]] = []
+        for poly_child in node:
+            child_tag = _strip_ns(poly_child.tag)
+            if child_tag == "outerBoundaryIs":
+                for ring in poly_child:
+                    if _strip_ns(ring.tag) == "LinearRing":
+                        crd = next((c for c in ring if _strip_ns(c.tag) == "coordinates"), None)
+                        if crd is not None and crd.text:
+                            shell_coords = _parse_coordinates(crd.text)
+            elif child_tag == "innerBoundaryIs":
+                for ring in poly_child:
+                    if _strip_ns(ring.tag) == "LinearRing":
+                        crd = next((c for c in ring if _strip_ns(c.tag) == "coordinates"), None)
+                        if crd is not None and crd.text:
+                            h_coords = _parse_coordinates(crd.text)
+                            if len(h_coords) >= 3:
+                                holes.append(h_coords)
+        if len(shell_coords) >= 3:
+            geometries.append(Polygon(shell_coords, holes))
+    elif node_tag == "MultiGeometry":
+        for sub in node:
+            _extract_geometries_from_node(sub, geometries)
+
+
 def _parse_kml_native(file_path: str) -> list[dict[str, Any]]:
     """Parse KML file using standard library ElementTree.
 
@@ -68,7 +109,7 @@ def _parse_kml_native(file_path: str) -> list[dict[str, Any]]:
             continue
 
         props: dict[str, Any] = {}
-        geometries = []
+        geometries: list[Any] = []
 
         for child in elem:
             tag_name = _strip_ns(child.tag)
@@ -83,47 +124,8 @@ def _parse_kml_native(file_path: str) -> list[dict[str, Any]]:
                         if key and val:
                             props[key] = val.strip()
 
-        def extract_geometries_from_node(node):
-            node_tag = _strip_ns(node.tag)
-            if node_tag == "Point":
-                coord_elem = next((c for c in node if _strip_ns(c.tag) == "coordinates"), None)
-                if coord_elem is not None and coord_elem.text:
-                    coords = _parse_coordinates(coord_elem.text)
-                    if coords:
-                        geometries.append(Point(coords[0]))
-            elif node_tag == "LineString":
-                coord_elem = next((c for c in node if _strip_ns(c.tag) == "coordinates"), None)
-                if coord_elem is not None and coord_elem.text:
-                    coords = _parse_coordinates(coord_elem.text)
-                    if len(coords) >= 2:
-                        geometries.append(LineString(coords))
-            elif node_tag == "Polygon":
-                shell_coords = []
-                holes = []
-                for poly_child in node:
-                    child_tag = _strip_ns(poly_child.tag)
-                    if child_tag == "outerBoundaryIs":
-                        for ring in poly_child:
-                            if _strip_ns(ring.tag) == "LinearRing":
-                                crd = next((c for c in ring if _strip_ns(c.tag) == "coordinates"), None)
-                                if crd is not None and crd.text:
-                                    shell_coords = _parse_coordinates(crd.text)
-                    elif child_tag == "innerBoundaryIs":
-                        for ring in poly_child:
-                            if _strip_ns(ring.tag) == "LinearRing":
-                                crd = next((c for c in ring if _strip_ns(c.tag) == "coordinates"), None)
-                                if crd is not None and crd.text:
-                                    h_coords = _parse_coordinates(crd.text)
-                                    if len(h_coords) >= 3:
-                                        holes.append(h_coords)
-                if len(shell_coords) >= 3:
-                    geometries.append(Polygon(shell_coords, holes))
-            elif node_tag == "MultiGeometry":
-                for sub in node:
-                    extract_geometries_from_node(sub)
-
         for child in elem:
-            extract_geometries_from_node(child)
+            _extract_geometries_from_node(child, geometries)
 
         for geom in geometries:
             features.append(
@@ -170,7 +172,7 @@ def read_geospatial_file(
         raise ValueError(f"Unsupported file format: {ext}")
 
     features = []
-    crs_string: Optional[str] = None
+    crs_string: str | None = None
 
     try:
         layer_names = fiona.listlayers(source)
@@ -217,7 +219,7 @@ def read_geospatial_file(
     return features, crs_string or "UNKNOWN"
 
 
-def compute_measurement(feature: dict, source_crs: Optional[str]) -> dict:
+def compute_measurement(feature: dict, source_crs: str | None) -> dict:
     """Compute the measurement for a single feature.
 
     Args:

@@ -84,7 +84,7 @@ class DatabaseRepository:
             self.supabase_client = client
             self.use_supabase = True
             logger.info("Connected to Supabase successfully.")
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.warning(
                 "Supabase not accessible (%s). Operating with local SQLite repository.",
                 exc,
@@ -129,7 +129,7 @@ class DatabaseRepository:
         if self.use_supabase and self.supabase_client:
             try:
                 self.supabase_client.table("files").insert(record).execute()
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 logger.warning("Failed to mirror insert file to Supabase: %s", exc)
 
         return record
@@ -169,7 +169,7 @@ class DatabaseRepository:
         if self.use_supabase and self.supabase_client:
             try:
                 self.supabase_client.table("files").update(updates).eq("id", file_id).execute()
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 logger.warning("Failed to mirror update file to Supabase: %s", exc)
 
         return self.get_file(file_id)
@@ -245,7 +245,7 @@ class DatabaseRepository:
                     for r in records_to_insert
                 ]
                 self.supabase_client.table("measurements").insert(supabase_records).execute()
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 logger.warning("Failed to mirror measurements to Supabase: %s", exc)
 
     def get_measurements(self, file_id: str) -> list[dict[str, Any]]:
@@ -262,7 +262,7 @@ class DatabaseRepository:
                 if isinstance(d.get("properties"), str):
                     try:
                         d["properties"] = json.loads(d["properties"])
-                    except Exception:  # noqa: BLE001
+                    except Exception:
                         d["properties"] = {}
                 results.append(d)
             return results

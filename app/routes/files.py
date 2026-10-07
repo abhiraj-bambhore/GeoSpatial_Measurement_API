@@ -1,10 +1,9 @@
 """FastAPI router for geospatial file upload, inspection, and measurements."""
 
 import logging
-import shutil
 from pathlib import Path
 
-from fastapi import APIRouter, BackgroundTasks, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, HTTPException, UploadFile, status
 
 from app.config import settings
 from app.database import repo
@@ -79,7 +78,7 @@ async def upload_file(
             filename=filename,
             file_path=str(dest_path),
         )
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.exception("Pipeline execution failed")
         repo.update_file(
             file_id,
