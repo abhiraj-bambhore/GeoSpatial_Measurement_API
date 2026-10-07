@@ -1,0 +1,30 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+# Image is built by GitHub Actions (cd.yaml) and pushed to GHCR.
+# Render pulls the pre-built image on every deploy hook trigger.
+services:
+  - type: web
+    name: geospatial-measurement-api
+    runtime: image
+    # Replace <YOUR_GITHUB_USERNAME> with your actual GitHub username
+    image:
+      url: ghcr.io/<YOUR_GITHUB_USERNAME>/geospatial-measurment-api:latest
+    plan: free
+    region: oregon
+
+    # Render health check — must return 200
+    healthCheckPath: /health
+
+    # Port the container listens on
+    envVars:
+      - key: SUPABASE_URL
+        sync: false          # Set manually in Render Dashboard → Environment
+      - key: SUPABASE_KEY
+        sync: false          # Set manually in Render Dashboard → Environment
+      - key: UPLOAD_DIR
+        value: /app/uploads
+
+    # Persistent disk for uploaded files
+    disk:
+      name: geospatial-uploads
+      mountPath: /app/uploads
+      sizeGB: 1
