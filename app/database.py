@@ -9,9 +9,9 @@ import json
 import logging
 import sqlite3
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from app.config import settings
 
@@ -67,9 +67,13 @@ class DatabaseRepository:
             conn.commit()
 
     def _init_supabase(self):
-        clean_url = settings.supabase_url.rstrip("/")
-        if clean_url.endswith("/rest/v1"):
-            clean_url = clean_url[:-8]
+        if not settings.supabase_url or not settings.supabase_key:
+            logger.info(
+                "Supabase credentials not configured. Operating with local SQLite repository."
+            )
+            return
+
+        clean_url = settings.supabase_url.rstrip("/").removesuffix("/rest/v1")
 
         try:
             from supabase import create_client
@@ -80,7 +84,7 @@ class DatabaseRepository:
             self.supabase_client = client
             self.use_supabase = True
             logger.info("Connected to Supabase successfully.")
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.warning(
                 "Supabase not accessible (%s). Operating with local SQLite repository.",
                 exc,
@@ -89,7 +93,7 @@ class DatabaseRepository:
 
     def create_file(self, filename: str, file_path: str) -> dict[str, Any]:
         file_id = str(uuid.uuid4())
-        created_at = datetime.now(timezone.utc).isoformat()
+        created_at = datetime.now(UTC).isoformat()
         record = {
             "id": file_id,
             "filename": filename,
@@ -125,7 +129,7 @@ class DatabaseRepository:
         if self.use_supabase and self.supabase_client:
             try:
                 self.supabase_client.table("files").insert(record).execute()
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 logger.warning("Failed to mirror insert file to Supabase: %s", exc)
 
         return record
@@ -134,11 +138,11 @@ class DatabaseRepository:
         self,
         file_id: str,
         *,
-        status: Optional[str] = None,
-        feature_count: Optional[int] = None,
-        crs: Optional[str] = None,
-        error_message: Optional[str] = None,
-    ) -> Optional[dict[str, Any]]:
+        status: str | None = None,
+        feature_count: int | None = None,
+        crs: str | None = None,
+        error_message: str | None = None,
+    ) -> dict[str, Any] | None:
         updates: dict[str, Any] = {}
         if status is not None:
             updates["status"] = status
@@ -152,7 +156,7 @@ class DatabaseRepository:
         if not updates:
             return self.get_file(file_id)
 
-        set_clauses = [f"{k} = ?" for k in updates.keys()]
+        set_clauses = [f"{k} = ?" for k in updates]
         values = list(updates.values()) + [file_id]
 
         with sqlite3.connect(DB_PATH) as conn:
@@ -165,12 +169,12 @@ class DatabaseRepository:
         if self.use_supabase and self.supabase_client:
             try:
                 self.supabase_client.table("files").update(updates).eq("id", file_id).execute()
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 logger.warning("Failed to mirror update file to Supabase: %s", exc)
 
         return self.get_file(file_id)
 
-    def get_file(self, file_id: str) -> Optional[dict[str, Any]]:
+    def get_file(self, file_id: str) -> dict[str, Any] | None:
         with sqlite3.connect(DB_PATH) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
@@ -191,7 +195,7 @@ class DatabaseRepository:
         if not measurements:
             return
 
-        now_iso = datetime.now(timezone.utc).isoformat()
+        now_iso = datetime.now(UTC).isoformat()
         records_to_insert = []
         for m in measurements:
             rec_id = str(uuid.uuid4())
@@ -241,7 +245,7 @@ class DatabaseRepository:
                     for r in records_to_insert
                 ]
                 self.supabase_client.table("measurements").insert(supabase_records).execute()
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 logger.warning("Failed to mirror measurements to Supabase: %s", exc)
 
     def get_measurements(self, file_id: str) -> list[dict[str, Any]]:
@@ -258,7 +262,7 @@ class DatabaseRepository:
                 if isinstance(d.get("properties"), str):
                     try:
                         d["properties"] = json.loads(d["properties"])
-                    except Exception:
+                    except Exception:  # noqa: BLE001
                         d["properties"] = {}
                 results.append(d)
             return results

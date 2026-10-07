@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -10,10 +9,10 @@ class FileResponse(BaseModel):
     id: str
     filename: str
     feature_count: int = 0
-    crs: Optional[str] = None
+    crs: str | None = None
     status: str = "PENDING"
-    error_message: Optional[str] = None
-    created_at: Optional[datetime] = None
+    error_message: str | None = None
+    created_at: datetime | None = None
 
     model_config = {"from_attributes": True}
 
@@ -31,11 +30,11 @@ class MeasurementResponse(BaseModel):
     file_id: str
     feature_index: int
     geometry_type: str
-    geometry_wkt: Optional[str] = None
+    geometry_wkt: str | None = None
     properties: dict = Field(default_factory=dict)
-    measurement_type: Optional[str] = None
-    measurement_value: Optional[float] = None
-    measurement_unit: Optional[str] = None
+    measurement_type: str | None = None
+    measurement_value: float | None = None
+    measurement_unit: str | None = None
 
     model_config = {"from_attributes": True}
 
@@ -45,6 +44,6 @@ class MeasurementsListResponse(BaseModel):
 
     file_id: str
     filename: str
-    crs: Optional[str] = None
+    crs: str | None = None
     feature_count: int = 0
     measurements: list[MeasurementResponse]

@@ -1,7 +1,6 @@
 """FastAPI router for geospatial file upload, inspection, and measurements."""
 
 import logging
-import os
 import shutil
 from pathlib import Path
 
@@ -30,13 +29,13 @@ router = APIRouter(prefix="/api/files", tags=["files"])
     description="Accepts a .zip containing a Shapefile or a .kml file. Extracts features and computes measurements.",
 )
 async def upload_file(
-    file: UploadFile = File(...),
+    file: UploadFile,
     background_tasks: BackgroundTasks = None,
 ):
     filename = file.filename or ""
     lower_name = filename.lower()
 
-    if not (lower_name.endswith(".zip") or lower_name.endswith(".kml")):
+    if not lower_name.endswith((".zip", ".kml")):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Unsupported file format. Please upload a .zip (Shapefile) or .kml file.",
@@ -56,10 +55,13 @@ async def upload_file(
     file_record = repo.update_file(file_id, status="PROCESSING")
 
     try:
-        with open(dest_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-    except Exception as exc:
-        logger.exception("Failed to save uploaded file: %s", exc)
+        import anyio
+
+        async with await anyio.open_file(dest_path, "wb") as buffer:
+            content = await file.read()
+            await buffer.write(content)
+    except Exception:
+        logger.exception("Failed to save uploaded file")
         repo.update_file(
             file_id,
             status="FAILED",
@@ -77,12 +79,12 @@ async def upload_file(
             filename=filename,
             file_path=str(dest_path),
         )
-    except Exception as exc:
-        logger.exception("Pipeline execution failed: %s", exc)
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("Pipeline execution failed")
         repo.update_file(
             file_id,
             status="FAILED",
-            error_message=f"Pipeline processing failed: {str(exc)}",
+            error_message=f"Pipeline processing failed: {exc!s}",
         )
 
     updated_record = repo.get_file(file_id)

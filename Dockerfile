@@ -46,7 +46,8 @@ COPY --from=builder /app/.venv /app/.venv
 # Add venv to PATH
 ENV PATH="/app/.venv/bin:${PATH}" \
     PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    UPLOAD_DIR=/tmp/uploads
 
 # Copy application source code
 COPY app/ ./app/
@@ -54,9 +55,10 @@ COPY static/ ./static/
 COPY migrations/ ./migrations/
 
 # Create runtime directories owned by non-root user
+# /tmp/uploads is writable on Render free plan (ephemeral, survives restarts in same instance)
 RUN useradd -m -u 1001 appuser \
-    && mkdir -p uploads data \
-    && chown -R appuser:appuser /app
+    && mkdir -p /tmp/uploads data \
+    && chown -R appuser:appuser /app /tmp/uploads
 
 USER appuser
 
@@ -66,4 +68,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+# Shell form lets Render inject $PORT dynamically; default to 8000 locally
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1

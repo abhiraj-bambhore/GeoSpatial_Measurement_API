@@ -5,26 +5,20 @@ services:
   - type: web
     name: geospatial-measurement-api
     runtime: image
-    # Replace <YOUR_GITHUB_USERNAME> with your actual GitHub username
     image:
-      url: ghcr.io/<YOUR_GITHUB_USERNAME>/geospatial-measurment-api:latest
+      url: ghcr.io/abhiraj-bambhore/geospatial_measurement_api:latest
     plan: free
     region: oregon
 
     # Render health check — must return 200
     healthCheckPath: /health
 
-    # Port the container listens on
     envVars:
       - key: SUPABASE_URL
         sync: false          # Set manually in Render Dashboard → Environment
       - key: SUPABASE_KEY
         sync: false          # Set manually in Render Dashboard → Environment
       - key: UPLOAD_DIR
-        value: /app/uploads
-
-    # Persistent disk for uploaded files
-    disk:
-      name: geospatial-uploads
-      mountPath: /app/uploads
-      sizeGB: 1
+        value: /tmp/uploads
+      - key: PORT
+        value: 8000

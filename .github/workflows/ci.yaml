@@ -44,9 +44,7 @@ jobs:
     needs: lint
 
     env:
-      # CI uses dummy credentials → app gracefully falls back to SQLite
-      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+      # Supabase credentials are optional — app falls back to local SQLite
       UPLOAD_DIR: /tmp/uploads
 
     steps:

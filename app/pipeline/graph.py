@@ -12,13 +12,12 @@ Orchestrates the entire geospatial lifecycle:
 
 import logging
 from pathlib import Path
-from typing import Any, Optional, TypedDict
+from typing import Any, TypedDict
 
 from langgraph.graph import END, StateGraph
 
 from app.database import repo
 from app.services.crs_service import (
-    format_crs,
     is_geographic_crs,
     transform_geometry,
 )
@@ -33,8 +32,8 @@ class ProcessingState(TypedDict):
     file_path: str
     is_valid: bool
     status: str
-    error: Optional[str]
-    crs: Optional[str]
+    error: str | None
+    crs: str | None
     features: list[dict[str, Any]]
     measurements: list[dict[str, Any]]
 
@@ -51,7 +50,7 @@ def validate_input(state: ProcessingState) -> dict[str, Any]:
             "status": "FAILED",
         }
 
-    if not (filename.endswith(".zip") or filename.endswith(".kml")):
+    if not filename.endswith((".zip", ".kml")):
         return {
             "is_valid": False,
             "error": "Unsupported file format. Only .zip (Shapefile) or .kml files are accepted.",
@@ -73,10 +72,10 @@ def extract_features(state: ProcessingState) -> dict[str, Any]:
             "status": "PROCESSING",
         }
     except Exception as exc:
-        logger.exception("Feature extraction error: %s", exc)
+        logger.exception("Feature extraction error")
         return {
             "is_valid": False,
-            "error": f"Failed to extract geospatial features: {str(exc)}",
+            "error": f"Failed to extract geospatial features: {exc!s}",
             "status": "FAILED",
         }
 
