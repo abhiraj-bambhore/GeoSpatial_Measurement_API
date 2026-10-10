@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Trans-Pacific Aviation Airway</name>
+    <Placemark>
+      <name>Airway Route PACOT-5</name>
+      <description>International commercial flight navigation track</description>
+      <LineString>
+        <tessellate>1</tessellate>
+        <coordinates>
+          -122.3750,37.6188,10000
+          -125.0000,38.5000,10500
+          -130.0000,40.0000,11000
+          -135.0000,41.2000,11500
+          -140.0000,42.0000,11500
+          -145.0000,42.5000,11500
+        </coordinates>
+      </LineString>
+    </Placemark>
+  </Document>
+</kml>

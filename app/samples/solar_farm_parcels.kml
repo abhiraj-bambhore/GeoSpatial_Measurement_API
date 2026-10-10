@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Mojave Clean Energy Solar Farm</name>
+    <Placemark>
+      <name>Photovoltaic Array Sector 1</name>
+      <description>High-efficiency monocrystalline solar array field</description>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              -115.4800,35.2500,0
+              -115.4700,35.2500,0
+              -115.4700,35.2600,0
+              -115.4800,35.2600,0
+              -115.4800,35.2500,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+    <Placemark>
+      <name>Photovoltaic Array Sector 2</name>
+      <description>Dual-axis tracking solar panel installation</description>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              -115.4650,35.2500,0
+              -115.4550,35.2500,0
+              -115.4550,35.2620,0
+              -115.4650,35.2620,0
+              -115.4650,35.2500,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+    <Placemark>
+      <name>Battery Storage Substation Parcel</name>
+      <description>Grid-scale lithium energy storage and transformer yard</description>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              -115.4750,35.2420,0
+              -115.4680,35.2420,0
+              -115.4680,35.2480,0
+              -115.4750,35.2480,0
+              -115.4750,35.2420,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+  </Document>
+</kml>

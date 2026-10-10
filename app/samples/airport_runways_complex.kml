@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>International Airport Airfield Layout</name>
+    <Placemark>
+      <name>Runway 09L/27R (Main Commercial)</name>
+      <description>Heavy widebody aircraft landing and takeoff corridor</description>
+      <LineString>
+        <tessellate>1</tessellate>
+        <coordinates>
+          -0.4850,51.4700,25
+          -0.4350,51.4700,25
+        </coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>Runway 09R/27L (Parallel South)</name>
+      <description>Secondary parallel runway for simultaneous arrivals</description>
+      <LineString>
+        <tessellate>1</tessellate>
+        <coordinates>
+          -0.4800,51.4600,24
+          -0.4320,51.4600,24
+        </coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>Crosswind Runway 05/23</name>
+      <description>Tactical crosswind operational runway</description>
+      <LineString>
+        <tessellate>1</tessellate>
+        <coordinates>
+          -0.4650,51.4550,23
+          -0.4450,51.4750,26
+        </coordinates>
+      </LineString>
+    </Placemark>
+  </Document>
+</kml>

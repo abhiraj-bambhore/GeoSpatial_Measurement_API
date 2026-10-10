@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Metropolitan Transit Hub Network</name>
+    <Placemark>
+      <name>Central Station Terminal</name>
+      <description>Multi-modal transfer point connecting subways and commuter rail</description>
+      <Point>
+        <coordinates>2.3522,48.8566,35</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>Financial District Gateway</name>
+      <description>Commercial business district underground station</description>
+      <Point>
+        <coordinates>2.3412,48.8698,42</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>University Campus South</name>
+      <description>Academic campus terminal with bicycle sharing facilities</description>
+      <Point>
+        <coordinates>2.3615,48.8412,30</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>Harbor Port Junction</name>
+      <description>Maritime passenger ferry connection terminal</description>
+      <Point>
+        <coordinates>2.3789,48.8350,28</coordinates>
+      </Point>
+    </Placemark>
+  </Document>
+</kml>

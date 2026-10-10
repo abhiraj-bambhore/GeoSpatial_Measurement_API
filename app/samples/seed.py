@@ -15,6 +15,11 @@ SAMPLE_FILES: list[tuple[str, str]] = [
     ("linestring_shoreline.kml", "linestring.kml"),
     ("multiple_geometries.kml", "multiple_geometries.kml"),
     ("point_landmark.kml", "point.kml"),
+    ("national_park_boundary.kml", "national_park_boundary.kml"),
+    ("flight_path_corridor.kml", "flight_path_corridor.kml"),
+    ("city_metro_stations.kml", "city_metro_stations.kml"),
+    ("solar_farm_parcels.kml", "solar_farm_parcels.kml"),
+    ("airport_runways_complex.kml", "airport_runways_complex.kml"),
 ]
 
 

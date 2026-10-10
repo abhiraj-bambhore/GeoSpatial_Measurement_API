@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Yellowstone Northern Range Reserve</name>
+    <Placemark>
+      <name>Lamar Valley Wildlife Corridor</name>
+      <description>Protected wildlife sanctuary boundary with natural perimeter</description>
+      <Polygon>
+        <extrude>1</extrude>
+        <altitudeMode>clampToGround</altitudeMode>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              -110.2500,44.9000,0
+              -110.1500,44.9200,0
+              -110.0500,44.8800,0
+              -110.0800,44.8200,0
+              -110.2000,44.8100,0
+              -110.2500,44.9000,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+  </Document>
+</kml>
