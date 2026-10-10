@@ -63,9 +63,7 @@ def validate_input(state: ProcessingState) -> dict[str, Any]:
 def extract_features(state: ProcessingState) -> dict[str, Any]:
     """Extract geospatial features and source CRS from the file."""
     try:
-        features, crs_string = read_geospatial_file(
-            state["file_path"], state["filename"]
-        )
+        features, crs_string = read_geospatial_file(state["file_path"], state["filename"])
         return {
             "features": features,
             "crs": crs_string,

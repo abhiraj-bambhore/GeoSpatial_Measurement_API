@@ -53,11 +53,15 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Set lowercase repository image name
+        run: |
+          echo "IMAGE_NAME=ghcr.io/${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+
       - name: Extract Docker metadata (tags & labels)
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository }}
+          images: ${{ env.IMAGE_NAME }}
           tags: |
             type=sha,prefix=sha-,format=short
             type=ref,event=branch
@@ -78,7 +82,7 @@ jobs:
 
       - name: Output image digest
         run: |
-          echo "Image pushed: ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}"
+          echo "Image pushed: ${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}"
 
   # ── 2. Deploy to Render ──────────────────────────────────────
   deploy-render:
@@ -90,7 +94,18 @@ jobs:
       url: ${{ vars.RENDER_APP_URL }}
 
     steps:
+      - name: Check Deploy Hook Configuration
+        id: check-hook
+        run: |
+          if [ -z "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" ]; then
+            echo "RENDER_DEPLOY_HOOK_URL not set in secrets. Skipping automated webhook (using manual Render connection)."
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Trigger Render Deploy Hook
+        if: steps.check-hook.outputs.skip != 'true'
         run: |
           HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
             --max-time 30 \
@@ -104,11 +119,13 @@ jobs:
           fi
 
       - name: Wait for Render to come live
+        if: steps.check-hook.outputs.skip != 'true' && vars.RENDER_APP_URL != ''
         run: |
           echo "Waiting 60s for Render to start the new deployment..."
           sleep 60
 
       - name: Health check — verify deployment is live
+        if: steps.check-hook.outputs.skip != 'true' && vars.RENDER_APP_URL != ''
         run: |
           MAX_RETRIES=10
           WAIT=15

@@ -25,7 +25,10 @@ router = APIRouter(prefix="/api/files", tags=["files"])
     response_model=FileResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Upload and process a geospatial file",
-    description="Accepts a .zip containing a Shapefile or a .kml file. Extracts features and computes measurements.",
+    description=(
+        "Accepts a .zip containing a Shapefile or a .kml file. "
+        "Extracts features and computes measurements."
+    ),
 )
 async def upload_file(
     file: UploadFile,
@@ -59,7 +62,7 @@ async def upload_file(
         async with await anyio.open_file(dest_path, "wb") as buffer:
             content = await file.read()
             await buffer.write(content)
-    except Exception:
+    except Exception as exc:
         logger.exception("Failed to save uploaded file")
         repo.update_file(
             file_id,
@@ -69,7 +72,7 @@ async def upload_file(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error saving file.",
-        )
+        ) from exc
 
     # Execute LangGraph pipeline
     try:

@@ -35,36 +35,28 @@ def register_exception_handlers(app: FastAPI) -> None:
     """Register global exception handlers for consistent error responses."""
 
     @app.exception_handler(GeoProcessingError)
-    async def geo_processing_handler(
-        request: Request, exc: GeoProcessingError
-    ) -> JSONResponse:
+    async def geo_processing_handler(request: Request, exc: GeoProcessingError) -> JSONResponse:
         return JSONResponse(
             status_code=exc.status_code,
             content={"error": "processing_error", "detail": exc.message},
         )
 
     @app.exception_handler(FileValidationError)
-    async def file_validation_handler(
-        request: Request, exc: FileValidationError
-    ) -> JSONResponse:
+    async def file_validation_handler(request: Request, exc: FileValidationError) -> JSONResponse:
         return JSONResponse(
             status_code=400,
             content={"error": "validation_error", "detail": exc.message},
         )
 
     @app.exception_handler(CRSError)
-    async def crs_error_handler(
-        request: Request, exc: CRSError
-    ) -> JSONResponse:
+    async def crs_error_handler(request: Request, exc: CRSError) -> JSONResponse:
         return JSONResponse(
             status_code=422,
             content={"error": "crs_error", "detail": exc.message},
         )
 
     @app.exception_handler(Exception)
-    async def generic_handler(
-        request: Request, exc: Exception
-    ) -> JSONResponse:
+    async def generic_handler(request: Request, exc: Exception) -> JSONResponse:
         logger.exception("Unhandled exception: %s", exc)
         return JSONResponse(
             status_code=500,

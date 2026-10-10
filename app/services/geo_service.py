@@ -140,9 +140,7 @@ def _parse_kml_native(file_path: str) -> list[dict[str, Any]]:
     return features
 
 
-def read_geospatial_file(
-    file_path: str, filename: str
-) -> tuple[list[dict], str]:
+def read_geospatial_file(file_path: str, filename: str) -> tuple[list[dict], str]:
     """Read a geospatial file and extract all features.
 
     Args:

@@ -109,7 +109,9 @@ class DatabaseRepository:
         with sqlite3.connect(DB_PATH) as conn:
             conn.execute(
                 """
-                INSERT INTO files (id, filename, file_path, feature_count, crs, status, error_message, created_at)
+                INSERT INTO files (
+                    id, filename, file_path, feature_count, crs, status, error_message, created_at
+                )
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
@@ -157,7 +159,7 @@ class DatabaseRepository:
             return self.get_file(file_id)
 
         set_clauses = [f"{k} = ?" for k in updates]
-        values = list(updates.values()) + [file_id]
+        values = [*updates.values(), file_id]
 
         with sqlite3.connect(DB_PATH) as conn:
             conn.execute(

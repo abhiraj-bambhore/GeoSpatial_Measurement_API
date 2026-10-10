@@ -32,7 +32,11 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Geospatial File Measurement API",
-    description="High-performance backend service for reading Shapefile (.zip) and KML files, auto-projecting geographic coordinates to metric UTM CRS, and computing geometric measurements.",
+    description=(
+        "High-performance backend service for reading Shapefile (.zip) and KML files, "
+        "auto-projecting geographic coordinates to metric UTM CRS, "
+        "and computing geometric measurements."
+    ),
     version="1.0.0",
     lifespan=lifespan,
 )
