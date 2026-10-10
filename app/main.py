@@ -26,6 +26,14 @@ async def lifespan(app: FastAPI):
     Path(settings.upload_dir).mkdir(parents=True, exist_ok=True)
     Path("data").mkdir(parents=True, exist_ok=True)
     Path("static").mkdir(parents=True, exist_ok=True)
+
+    try:
+        from app.samples.seed import seed_sample_datasets
+
+        seed_sample_datasets()
+    except Exception as exc:
+        logger.warning("Could not auto-seed sample datasets: %s", exc)
+
     logger.info("Geospatial Measurement API initialized.")
     yield
 

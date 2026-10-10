@@ -93,6 +93,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
   refreshHistoryBtn.addEventListener('click', loadHistory);
 
+  const seedSamplesBtn = document.getElementById('seed-samples-btn');
+  if (seedSamplesBtn) {
+    seedSamplesBtn.addEventListener('click', async () => {
+      const origText = seedSamplesBtn.textContent;
+      seedSamplesBtn.textContent = 'Loading Datasets...';
+      seedSamplesBtn.disabled = true;
+      try {
+        const res = await fetch('/api/files/seed-samples', { method: 'POST' });
+        if (res.ok) {
+          await loadHistory();
+        }
+      } catch (err) {
+        console.error('Failed to seed datasets:', err);
+      } finally {
+        seedSamplesBtn.textContent = origText;
+        seedSamplesBtn.disabled = false;
+      }
+    });
+  }
+
   // Filter pills
   filterPills.forEach(pill => {
     pill.addEventListener('click', () => {

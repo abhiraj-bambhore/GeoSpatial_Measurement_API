@@ -149,3 +149,15 @@ async def get_file_measurements(file_id: str):
         feature_count=file_record.get("feature_count", 0),
         measurements=[MeasurementResponse(**m) for m in measurements],
     )
+
+
+@router.post(
+    "/seed-samples",
+    summary="Seed diverse sample datasets",
+    description="Loads pre-packaged Polygon, LineString, Point, and Shapefile datasets.",
+)
+async def seed_samples_endpoint():
+    from app.samples.seed import seed_sample_datasets
+
+    seeded = seed_sample_datasets()
+    return {"message": f"Seeded {len(seeded)} sample dataset(s).", "seeded": seeded}

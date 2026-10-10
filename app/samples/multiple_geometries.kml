@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Sample KML with Multiple Placemarks</name>
+    <Placemark>
+      <name>Weather Station Benchmark</name>
+      <description>Point feature: monitoring sensor</description>
+      <Point>
+        <coordinates>77.594562,12.971598,0</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>Ring Road Section</name>
+      <description>LineString feature: infrastructure corridor</description>
+      <LineString>
+        <coordinates>
+          77.5800,12.9600,0
+          77.5900,12.9700,0
+          77.6000,12.9750,0
+          77.6100,12.9800,0
+        </coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>Tech Park Boundary</name>
+      <description>Polygon feature: commercial zone parcel</description>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              77.5900,12.9700,0
+              77.6000,12.9700,0
+              77.6050,12.9800,0
+              77.5950,12.9850,0
+              77.5900,12.9700,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+  </Document>
+</kml>

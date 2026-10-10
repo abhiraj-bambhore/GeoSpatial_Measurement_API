@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Sample Point KML</name>
+    <Placemark>
+      <name>San Francisco Landmark</name>
+      <description>Single coordinate benchmark point</description>
+      <Point>
+        <coordinates>-122.419416,37.774929,0</coordinates>
+      </Point>
+    </Placemark>
+  </Document>
+</kml>
