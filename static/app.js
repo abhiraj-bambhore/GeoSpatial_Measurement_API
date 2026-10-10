@@ -430,8 +430,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!overviewMap) {
       overviewMap = L.map('overview-map').setView([20, 0], 2);
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://carto.com/">CARTO</a>, OpenStreetMap',
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom: 19,
       }).addTo(overviewMap);
       overviewLayers = L.featureGroup().addTo(overviewMap);
@@ -463,8 +463,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!modalMap) {
       modalMap = L.map('modal-map').setView([20, 0], 2);
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; CARTO, OpenStreetMap',
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom: 19,
       }).addTo(modalMap);
       modalLayers = L.featureGroup().addTo(modalMap);
