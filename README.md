@@ -1,5 +1,13 @@
 # Geospatial File Measurement API & Processing Engine
 
+[![Live Deployment](https://img.shields.io/badge/Render-Live%20Demo-46E3B7?style=for-the-badge&logo=render&logoColor=white)](https://geospatial-measurement-api-u4qi.onrender.com/)
+[![Interactive Swagger Docs](https://img.shields.io/badge/Swagger-API%20Docs-85EA2D?style=for-the-badge&logo=swagger&logoColor=black)](https://geospatial-measurement-api-u4qi.onrender.com/docs)
+[![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+
+> 🚀 **Live Production Application**: [https://geospatial-measurement-api-u4qi.onrender.com/](https://geospatial-measurement-api-u4qi.onrender.com/)  
+> 📖 **Interactive API Documentation (Swagger)**: [https://geospatial-measurement-api-u4qi.onrender.com/docs](https://geospatial-measurement-api-u4qi.onrender.com/docs)
+
 A production-grade backend service and analytics interface built with **FastAPI**, **LangGraph**, and **Supabase / PostGIS**, designed to ingest geospatial files (ESRI Shapefiles in `.zip` archives and Keyhole Markup Language `.kml`), validate geometries, auto-reproject geographic coordinates to optimal metric projected coordinate reference systems (UTM), and calculate high-precision spatial measurements.
 
 <p align="center">
@@ -37,47 +45,34 @@ A production-grade backend service and analytics interface built with **FastAPI*
 
 ## Architecture & LangGraph Pipeline
 
-```
-               [ User Upload: .zip / .kml ]
-                            │
-                            ▼
-              ┌──────────────────────────┐
-              │   POST /api/files/       │
-              └─────────────┬────────────┘
-                            │
-                            ▼
-           ══════════ LangGraph Pipeline ══════════
-           ┌──────────────────────────────────────┐
-           │        validate_input Node           │
-           └──────────────────┬───────────────────┘
-                              │ Valid?
-                      ┌───────┴───────┐
-                 Yes  ▼               ▼  No
-           ┌──────────────────────┐ ┌──────────────────┐
-           │ extract_features Node│ │handle_error Node │
-           └──────────┬───────────┘ └────────┬─────────┘
-                      │ Extracted?           │
-               ┌──────┴──────┐               │
-          Yes  ▼             ▼  No           │
-┌──────────────────────────┐ │               │
-│calculate_measurements    │ │               │
-│ - Geographic check       │ │               │
-│ - Centroid UTM projection│ │               │
-│ - Metric Area / Length   │ │               │
-└─────────────┬────────────┘ │               │
-              │              ▼               │
-              │       ┌──────────────┐       │
-              │       │ handle_error │       │
-              │       └──────┬───────┘       │
-              ▼              │               │
-     ┌─────────────────┐     │               │
-     │ persist_results │     │               │
-     └────────┬────────┘     │               │
-              ▼              ▼               │
-           ══════════════════════════════════╛
-                            │
-                            ▼
-         [ Database: Supabase / SQLite ]
+```mermaid
+flowchart TD
+    classDef input fill:#e0f2fe,stroke:#0284c7,stroke-width:2px,color:#0369a1;
+    classDef route fill:#f1f5f9,stroke:#64748b,stroke-width:1.5px,color:#334155;
+    classDef nodeStyle fill:#ffffff,stroke:#2563eb,stroke-width:2px,color:#1e3a8a;
+    classDef decision fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#92400e;
+    classDef error fill:#fee2e2,stroke:#ef4444,stroke-width:2px,color:#991b1b;
+    classDef storage fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#166534;
+
+    Upload["User Upload: .zip / .kml"]:::input --> POST["POST /api/files/"]:::route
+    POST --> PipelineStart(["Start LangGraph Pipeline"])
+
+    subgraph LangGraph_Pipeline["LangGraph StateGraph Workflow Engine"]
+        PipelineStart --> V["validate_input Node"]:::nodeStyle
+        V --> V_Check{"Valid Format & Schema?"}:::decision
+        
+        V_Check -- "Yes" --> E["extract_features Node<br/>(Fiona Shapefile / Native KML)"]:::nodeStyle
+        V_Check -- "No" --> Err["handle_error Node<br/>(Record failure & error details)"]:::error
+        
+        E --> E_Check{"Features Extracted?"}:::decision
+        E_Check -- "Yes" --> C["calculate_measurements Node<br/>• EPSG:4326 Geographic Check<br/>• Centroid-based Metric UTM Projection<br/>• Polygon Area (m²) & Line Length (m)"]:::nodeStyle
+        E_Check -- "No" --> Err
+        
+        C --> P["persist_results Node<br/>(Transactional commit)"]:::nodeStyle
+    end
+
+    P --> DB[("Database Storage<br/>Supabase PostGIS / SQLite")]:::storage
+    Err --> DB
 ```
 
 ### Database Schema & Entity Relationships (Supabase)
